@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -95,7 +96,7 @@
   }
 
   .typing-container {
-    @apply max-w-3xl mx-auto py-16 px-4;
+    @apply max-w-3xl mx-auto py-16 px-4 relative cursor-text;
   }
 
   .typing-display {
@@ -104,5 +105,14 @@
 
   .cursor-blink {
     @apply ml-0.5 inline-block w-[3px] h-8 bg-primary animate-pulse-light;
+  }
+
+  @keyframes pulse-light {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .animate-pulse-light {
+    animation: pulse-light 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }

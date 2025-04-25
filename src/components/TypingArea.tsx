@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ContentChunk } from '../types';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Type } from 'lucide-react';
 
 interface TypingAreaProps {
   chunk: ContentChunk;
@@ -13,9 +13,16 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
   const [typedText, setTypedText] = useState<string>('');
   const [currentPosition, setCurrentPosition] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const [isFocused, setIsFocused] = useState<boolean>(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    // Reset state when chunk changes
+    setTypedText('');
+    setCurrentPosition(0);
+    setIsCompleted(false);
+    
+    // Focus the input on mount and when chunk changes
     if (inputRef.current) {
       inputRef.current.focus();
     }
@@ -38,6 +45,12 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
     }
   };
 
+  const handleContainerClick = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   const renderText = () => {
     const targetText = chunk.text;
     const completed = targetText.substring(0, currentPosition);
@@ -53,7 +66,7 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
   };
 
   return (
-    <div className="typing-container">
+    <div className="typing-container" onClick={handleContainerClick}>
       {renderText()}
       
       <div className="relative mt-8">
@@ -62,9 +75,11 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
           value={typedText}
           onChange={handleTyping}
           disabled={isCompleted}
-          className="w-full h-24 p-3 bg-background/50 border-none rounded-md resize-none focus:outline-none focus:ring-0 opacity-0"
+          className="w-full h-24 p-3 bg-background/50 border rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-primary opacity-10"
           placeholder="Start typing..."
           aria-label="Typing input"
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
         
         {isCompleted && (
@@ -76,6 +91,20 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
           </div>
         )}
       </div>
+      
+      {!isFocused && (
+        <div className="mt-4 text-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-sm text-muted-foreground flex items-center gap-1.5"
+            onClick={handleContainerClick}
+          >
+            <Type className="h-3.5 w-3.5" />
+            <span>Click to type</span>
+          </Button>
+        </div>
+      )}
       
       <div className="mt-8 flex justify-between items-center text-sm text-muted-foreground">
         <div>
