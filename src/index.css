@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -93,5 +92,17 @@
 
   .cursor-blink {
     @apply ml-0.5 inline-block w-0.5 h-5 bg-primary animate-pulse-light;
+  }
+
+  .typing-container {
+    @apply max-w-3xl mx-auto py-16 px-4;
+  }
+
+  .typing-display {
+    @apply text-3xl md:text-4xl leading-relaxed font-mono tracking-wide mb-8;
+  }
+
+  .cursor-blink {
+    @apply ml-0.5 inline-block w-[3px] h-8 bg-primary animate-pulse-light;
   }
 }

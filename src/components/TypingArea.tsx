@@ -15,25 +15,20 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Focus the input on mount
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
   }, [chunk]);
 
-  // Check if the typed text matches the target text at the current position
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setTypedText(value);
-
-    const targetText = chunk.text;
     
-    // Check if the typed text matches the target text up to the current position
+    const targetText = chunk.text;
     if (value === targetText.substring(0, value.length)) {
       setCurrentPosition(value.length);
       
-      // If the user has completed typing the entire chunk
       if (value === targetText) {
         setIsCompleted(true);
         setTimeout(() => {
@@ -43,35 +38,32 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
     }
   };
 
-  // Render the text with highlighting for completed portion
   const renderText = () => {
     const targetText = chunk.text;
     const completed = targetText.substring(0, currentPosition);
     const remaining = targetText.substring(currentPosition);
 
     return (
-      <div className="typing-text font-mono mb-6 select-none">
+      <div className="typing-display select-none text-center">
         <span className="text-primary">{completed}</span>
-        <span>{remaining}</span>
+        <span className="text-muted-foreground">{remaining}</span>
         {!isCompleted && <span className="cursor-blink"></span>}
       </div>
     );
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-sm font-medium text-foreground/60 mb-2">Type the following text:</h3>
-        {renderText()}
-      </div>
-      <div className="relative">
+    <div className="typing-container">
+      {renderText()}
+      
+      <div className="relative mt-8">
         <textarea
           ref={inputRef}
           value={typedText}
           onChange={handleTyping}
           disabled={isCompleted}
-          className="w-full h-24 p-3 bg-background border border-border rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="Start typing here..."
+          className="w-full h-24 p-3 bg-background/50 border-none rounded-md resize-none focus:outline-none focus:ring-0 opacity-0"
+          placeholder="Start typing..."
           aria-label="Typing input"
         />
         
@@ -85,7 +77,7 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
         )}
       </div>
       
-      <div className="mt-4 flex justify-between items-center text-sm text-foreground/60">
+      <div className="mt-8 flex justify-between items-center text-sm text-muted-foreground">
         <div>
           {currentPosition}/{chunk.text.length} characters
         </div>
