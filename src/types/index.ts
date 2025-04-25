@@ -37,11 +37,13 @@ export interface UserProgress {
   lessonId: string;
   currentPage: number;
   currentChunk: number;
-  phase: 'typing' | 'recall' | 'quiz';
+  phase: 'typing' | 'recall' | 'quiz' | 'completed';
   completedChunks: string[];
   score: number;
   accuracy: number;
   lastActivity: string;
+  completed?: boolean;
+  overallProgress?: number;
 }
 
 export interface UserStats {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TypingArea } from '@/components/TypingArea';
@@ -30,7 +29,7 @@ const LessonPage = () => {
   const [score, setScore] = useState<number>(0);
   const [accuracy, setAccuracy] = useState<number>(0);
   const [lastResult, setLastResult] = useState<{ quizScore: number, recallAccuracy: number } | null>(null);
-  const [lessonData, setLessonData] = useState(sampleLesson); // In a real app, fetch based on lessonId
+  const [lessonData, setLessonData] = useState(sampleLesson);
   const { updateProgress, addPoints } = useUserProgress();
   
   const totalPages = lessonData.pages.length;
@@ -38,13 +37,10 @@ const LessonPage = () => {
   const totalChunks = currentPageData?.chunks.length || 0;
   const currentChunkData = currentPageData?.chunks[currentChunk] || null;
   
-  // Calculate overall progress percentage
   const overallProgress = Math.round(((currentPage * 100) + 
     (currentChunk / totalChunks * 100)) / totalPages);
 
-  // When component mounts, try to resume progress
   useEffect(() => {
-    // In a real app, you'd fetch the saved progress from server/localStorage
     const savedProgress = localStorage.getItem(`lesson-progress-${lessonId}`);
     
     if (savedProgress) {
@@ -64,7 +60,6 @@ const LessonPage = () => {
     }
   }, [lessonId]);
   
-  // Save progress when it changes
   useEffect(() => {
     if (phase === LessonPhase.COMPLETED) return;
     
@@ -82,36 +77,27 @@ const LessonPage = () => {
     });
   }, [currentPage, currentChunk, phase, lessonId, updateProgress, overallProgress]);
   
-  // Handle completion of the typing phase
   const handleTypingComplete = () => {
-    // Add points for completing typing
     addPoints(10);
     setPhase(LessonPhase.RECALL);
   };
   
-  // Handle completion of the recall phase
   const handleRecallComplete = (success: boolean) => {
-    // Add points based on success
     addPoints(success ? 20 : 5);
     
-    // If this is the last chunk in the page, go to quiz phase
     if (currentChunk === totalChunks - 1) {
       setPhase(LessonPhase.QUIZ);
     } else {
-      // Otherwise, move to the next chunk and back to typing phase
       setCurrentChunk((prev) => prev + 1);
       setPhase(LessonPhase.TYPING);
     }
     
-    // Update accuracy based on success
     setAccuracy((prev) => Math.round((prev + (success ? 100 : 0)) / 2));
   };
   
-  // Handle completion of the quiz phase
   const handleQuizComplete = (quizScore: number) => {
     setScore(quizScore);
     
-    // Add points based on quiz score
     addPoints(quizScore);
     
     setLastResult({
@@ -119,14 +105,11 @@ const LessonPage = () => {
       recallAccuracy: accuracy
     });
     
-    // If this is the last page, mark lesson as completed
     if (currentPage === totalPages - 1) {
       setPhase(LessonPhase.COMPLETED);
       
-      // Clear saved progress since lesson is complete
       localStorage.removeItem(`lesson-progress-${lessonId}`);
       
-      // Update user progress to completed
       updateProgress(lessonId || '', {
         currentPage: totalPages,
         currentChunk: 0,
@@ -135,25 +118,21 @@ const LessonPage = () => {
         completed: true
       });
       
-      // Show a toast with the completion message
       toast({
         title: "Lesson completed!",
         description: `You've completed the lesson with ${quizScore}% quiz score.`,
       });
     } else {
-      // Move to the next page
       setCurrentPage((prev) => prev + 1);
       setCurrentChunk(0);
       setPhase(LessonPhase.TYPING);
     }
   };
   
-  // Go back to home page
   const goToHome = () => {
     navigate('/');
   };
   
-  // Render the current phase content
   const renderPhaseContent = () => {
     if (!currentChunkData) return null;
     
