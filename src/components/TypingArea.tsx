@@ -17,7 +17,7 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [accuracy, setAccuracy] = useState<number>(100);
   const [errors, setErrors] = useState<number>(0);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,42 +34,50 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
     }
   }, [chunk]);
 
-  const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    const targetText = chunk.text;
+  const handleTyping = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (isCompleted) return;
     
-    // Compare current character with target
-    if (value.length > 0) {
-      const lastTypedChar = value[value.length - 1];
-      const expectedChar = targetText[value.length - 1];
-      
-      if (lastTypedChar !== expectedChar && value.length > typedText.length) {
-        setErrors(prev => prev + 1);
-        // Calculate accuracy
-        const totalChars = value.length;
-        const newAccuracy = Math.round(((totalChars - errors - 1) / totalChars) * 100);
-        setAccuracy(Math.max(0, newAccuracy));
-      }
+    // Handle backspace
+    if (e.key === 'Backspace' && typedText.length > 0) {
+      setTypedText(prev => prev.slice(0, -1));
+      setCurrentPosition(prev => prev - 1);
+      return;
     }
     
-    // Only allow typing that matches the target text
-    if (value === targetText.substring(0, value.length)) {
-      setTypedText(value);
-      setCurrentPosition(value.length);
+    // Ignore modifier keys and other non-printable characters
+    if (e.key.length !== 1 || e.ctrlKey || e.altKey || e.metaKey) return;
+    
+    const targetText = chunk.text;
+    const expectedChar = targetText[currentPosition];
+    const typedChar = e.key;
+    
+    // Add the character to typedText regardless of correctness
+    const newTypedText = typedText + typedChar;
+    setTypedText(newTypedText);
+    setCurrentPosition(prev => prev + 1);
+    
+    // Check if the typed character is correct
+    if (typedChar !== expectedChar) {
+      setErrors(prev => prev + 1);
+      // Calculate accuracy
+      const totalChars = newTypedText.length;
+      const newAccuracy = Math.round(((totalChars - errors - 1) / totalChars) * 100);
+      setAccuracy(Math.max(0, newAccuracy));
+    }
+    
+    // Check if typing is completed
+    if (currentPosition + 1 === targetText.length) {
+      setIsCompleted(true);
+      // Add points based on accuracy
+      const points = Math.round(accuracy / 10);
+      toast({
+        title: "Chunk completed!",
+        description: `You earned ${points} points with ${accuracy}% accuracy.`,
+      });
       
-      if (value === targetText) {
-        setIsCompleted(true);
-        // Add points based on accuracy
-        const points = Math.round(accuracy / 10);
-        toast({
-          title: "Chunk completed!",
-          description: `You earned ${points} points with ${accuracy}% accuracy.`,
-        });
-        
-        setTimeout(() => {
-          onComplete();
-        }, 1000);
-      }
+      setTimeout(() => {
+        onComplete();
+      }, 1000);
     }
   };
 
@@ -81,44 +89,65 @@ export function TypingArea({ chunk, onComplete }: TypingAreaProps) {
 
   const renderText = () => {
     const targetText = chunk.text;
-    const completed = targetText.substring(0, currentPosition);
-    const remaining = targetText.substring(currentPosition);
-
+    
     return (
-      <div className="typing-display select-none">
-        <span className="text-primary">{completed}</span>
-        <span className="text-muted-foreground">{remaining}</span>
-        {!isCompleted && <span className="cursor-blink"></span>}
+      <div className="monkeytype-text">
+        {targetText.split('').map((char, index) => {
+          let className = "monkeytype-char";
+          
+          if (index < currentPosition) {
+            // Character has been typed
+            const isCorrect = typedText[index] === char;
+            className += isCorrect ? " correct" : " incorrect";
+          } else if (index === currentPosition) {
+            // Current character
+            className += " current";
+          }
+          
+          return (
+            <span key={index} className={className}>
+              {char}
+            </span>
+          );
+        })}
+        {currentPosition === targetText.length && !isCompleted && (
+          <span className="cursor-blink"></span>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="typing-container" onClick={handleContainerClick}>
+    <div 
+      className="typing-container monkeytype-container" 
+      onClick={handleContainerClick}
+      tabIndex={-1}
+    >
       {renderText()}
       
-      <div className="relative mt-8">
-        <textarea
-          ref={inputRef}
-          value={typedText}
-          onChange={handleTyping}
-          disabled={isCompleted}
-          className="w-full h-24 p-3 bg-background/50 border rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-primary opacity-10"
-          placeholder="Start typing..."
-          aria-label="Typing input"
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-        />
-        
-        {isCompleted && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
-            <Button onClick={onComplete} className="flex items-center gap-1">
-              <span>Continue</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
+      <input
+        ref={inputRef}
+        type="text"
+        className="monkeytype-hidden-input"
+        autoFocus
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+        onKeyDown={handleTyping}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        aria-label="Typing input"
+      />
+      
+      {isCompleted && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
+          <Button onClick={onComplete} className="flex items-center gap-1">
+            <span>Continue</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       
       {!isFocused && (
         <div className="mt-4 text-center">
