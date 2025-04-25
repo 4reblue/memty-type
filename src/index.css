@@ -1,4 +1,5 @@
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,6 +35,12 @@
     --ring: 221 83% 53%;
 
     --radius: 0.5rem;
+    
+    --memty-green: 142 71% 45%;
+    --memty-red: 0 84% 60%;
+    --memty-yellow: 38 92% 50%;
+    --memty-blue: 221 83% 53%;
+    --memty-teal: 199 89% 48%;
   }
 
   .dark {
@@ -64,6 +71,12 @@
     --border: 217 33% 18%;
     --input: 217 33% 18%;
     --ring: 221 83% 53%;
+    
+    --memty-green: 142 71% 45%;
+    --memty-red: 0 84% 60%;
+    --memty-yellow: 38 92% 50%;
+    --memty-blue: 221 83% 53%;
+    --memty-teal: 199 89% 48%;
   }
 }
 
@@ -100,7 +113,7 @@
   }
 
   .typing-display {
-    @apply text-3xl md:text-4xl leading-relaxed font-mono tracking-wide mb-8;
+    @apply text-3xl md:text-4xl leading-relaxed font-mono tracking-wide mb-8 text-center;
   }
 
   .cursor-blink {
@@ -115,4 +128,25 @@
   .animate-pulse-light {
     animation: pulse-light 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+  
+  .badge-icon {
+    @apply flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary;
+  }
+  
+  .lesson-card {
+    @apply relative transition-all hover:translate-y-[-3px] hover:shadow-lg;
+  }
+  
+  .stats-card {
+    @apply bg-card rounded-lg border p-4 flex flex-col items-center justify-center;
+  }
+  
+  .stats-number {
+    @apply text-3xl font-bold;
+  }
+  
+  .stats-label {
+    @apply text-sm text-muted-foreground mt-1;
+  }
 }
+

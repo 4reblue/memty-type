@@ -2,7 +2,9 @@
 import React, { useState } from 'react';
 import { QuizQuestion } from '../types';
 import { Button } from '@/components/ui/button';
-import { Check, X } from 'lucide-react';
+import { Check, X, Award } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 interface QuizAreaProps {
   questions: QuizQuestion[];
@@ -14,8 +16,11 @@ export function QuizArea({ questions, onComplete }: QuizAreaProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [score, setScore] = useState<number>(0);
+  const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
+  const { toast } = useToast();
   
   const currentQuestion = questions[currentQuestionIndex];
+  const progressPercentage = (answeredQuestions.length / questions.length) * 100;
   
   const handleAnswerSelect = (answer: string) => {
     if (isChecking) return;
@@ -23,11 +28,26 @@ export function QuizArea({ questions, onComplete }: QuizAreaProps) {
   };
   
   const checkAnswer = () => {
-    setIsChecking(true);
+    if (!selectedAnswer) return;
     
-    if (selectedAnswer === currentQuestion.correctAnswer) {
+    setIsChecking(true);
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+    
+    if (isCorrect) {
       setScore(score + 1);
+      toast({
+        title: "Correct!",
+        description: "Well done! That's the right answer.",
+      });
+    } else {
+      toast({
+        title: "Incorrect",
+        description: `The correct answer was: ${currentQuestion.correctAnswer}`,
+        variant: "destructive",
+      });
     }
+    
+    setAnsweredQuestions([...answeredQuestions, currentQuestionIndex]);
     
     setTimeout(() => {
       if (currentQuestionIndex < questions.length - 1) {
@@ -36,8 +56,15 @@ export function QuizArea({ questions, onComplete }: QuizAreaProps) {
         setIsChecking(false);
       } else {
         // Quiz completed
-        const finalScore = selectedAnswer === currentQuestion.correctAnswer ? score + 1 : score;
+        const finalScore = isCorrect ? score + 1 : score;
         const percentage = Math.round((finalScore / questions.length) * 100);
+        
+        // Show completion toast
+        toast({
+          title: "Quiz completed!",
+          description: `You scored ${percentage}% (${finalScore}/${questions.length})`,
+        });
+        
         onComplete(percentage);
       }
     }, 1500);
@@ -46,12 +73,14 @@ export function QuizArea({ questions, onComplete }: QuizAreaProps) {
   return (
     <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-2">
           <h3 className="font-medium">Comprehension Quiz</h3>
           <span className="text-sm text-foreground/60">
             Question {currentQuestionIndex + 1}/{questions.length}
           </span>
         </div>
+        
+        <Progress value={progressPercentage} className="h-1.5 mb-6" />
         
         <div className="mb-6">
           <h4 className="text-lg font-medium mb-4">{currentQuestion.question}</h4>

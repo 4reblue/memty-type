@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ContentChunk } from '../types';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Check, X } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 interface RecallAreaProps {
   chunk: ContentChunk;
@@ -15,14 +16,53 @@ export function RecallArea({ chunk, originalChunk, onComplete }: RecallAreaProps
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [accuracy, setAccuracy] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const { toast } = useToast();
+  
+  // Process the original text to generate blanks if not provided
+  useEffect(() => {
+    if (!chunk.recallText) {
+      // Wait 3 seconds before showing recall (simulating processing time)
+      setTimeLeft(3);
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev === null || prev <= 1) {
+            clearInterval(timer);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [chunk]);
   
   // Split the recall text into parts (words and blanks)
-  const textParts = chunk.recallText?.split('____') || [];
+  const recallText = chunk.recallText || createRecallText(originalChunk.text);
+  const textParts = recallText.split('____') || [];
+  
+  // Function to create recall text with blanks for important words
+  function createRecallText(text: string): string {
+    const words = text.split(' ');
+    // Create blanks for ~20% of words (typically nouns, verbs, key terms)
+    let blankCount = 0;
+    const maxBlanks = Math.max(1, Math.floor(words.length * 0.2));
+    
+    return words.map((word, i) => {
+      // Skip short words, punctuation-only words, and limit total blanks
+      if (word.length > 4 && !word.match(/^[.,;:!?]+$/) && blankCount < maxBlanks && Math.random() > 0.6) {
+        blankCount++;
+        return '____';
+      }
+      return word;
+    }).join(' ');
+  }
   
   // Function to extract blanks from original text and recall text
   const extractBlanks = () => {
     const originalWords = originalChunk.text.split(' ');
-    const recallWords = chunk.recallText?.split(' ') || [];
+    const recallWords = recallText.split(' ') || [];
     
     const blanks = [];
     let blankIndex = 0;
@@ -64,11 +104,28 @@ export function RecallArea({ chunk, originalChunk, onComplete }: RecallAreaProps
     
     setAccuracy(calculatedAccuracy);
     setIsCompleted(true);
+    
+    // Show toast with points
+    const points = Math.round(calculatedAccuracy / 5);
+    toast({
+      title: `Recall completed!`,
+      description: `You earned ${points} points with ${calculatedAccuracy}% accuracy.`,
+    });
   };
   
   // Render the recall text with input fields for blanks
   const renderRecallText = () => {
-    if (!chunk.recallText) return null;
+    if (timeLeft !== null) {
+      return (
+        <div className="flex flex-col items-center justify-center h-32">
+          <div className="text-xl font-medium mb-2">Preparing recall challenge</div>
+          <div className="text-4xl font-bold">{timeLeft}</div>
+          <div className="text-muted-foreground mt-2">Memorize what you just typed...</div>
+        </div>
+      );
+    }
+    
+    if (!recallText) return null;
     
     let elements = [];
     
@@ -132,7 +189,11 @@ export function RecallArea({ chunk, originalChunk, onComplete }: RecallAreaProps
       </div>
       
       {!isChecking ? (
-        <Button onClick={checkAnswers} className="w-full">
+        <Button 
+          onClick={checkAnswers} 
+          className="w-full"
+          disabled={timeLeft !== null}
+        >
           Check Answers
         </Button>
       ) : (
